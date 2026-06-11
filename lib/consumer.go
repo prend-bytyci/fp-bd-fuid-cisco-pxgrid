@@ -6,7 +6,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
-	"io/ioutil"
+	"io"
+	"os"
 	"net/http"
 	"time"
 )
@@ -52,7 +53,7 @@ func SessionListener(secret, restUrl, timeStampFilePath string, controller *Cont
 		if resp.StatusCode == http.StatusUnauthorized {
 			return errors.New(fmt.Sprintf("UnexpectedResponseError: status_code: %d, statusReason: %s  %s", resp.StatusCode, resp.Status, "not authorized"))
 		}
-		respBody, err := ioutil.ReadAll(resp.Body)
+		respBody, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return err
 		}
@@ -63,7 +64,7 @@ func SessionListener(secret, restUrl, timeStampFilePath string, controller *Cont
 		return errors.New(fmt.Sprintf("UnexpectedResponseError: status_code: %d, statusReason: %s", resp.StatusCode, resp.Status))
 	}
 	var sessions IseSessions
-	respBody, err := ioutil.ReadAll(resp.Body)
+	respBody, err := io.ReadAll(resp.Body)
 	if err := json.Unmarshal(respBody, &sessions); err != nil {
 		if err := FixJson(respBody, &sessions); err != nil {
 			return errors.Wrap(err, "SessionListener")
@@ -129,7 +130,7 @@ func saveTimeStampToDisk(newTimestamp *time.Time, timeStampFilePath string) erro
 	if err != nil {
 		return errors.New(fmt.Sprintf("saveTimeStampToDisk %s", err.Error()))
 	}
-	if err := ioutil.WriteFile(timeStampFilePath, timeStampBytes, 0666); err != nil {
+	if err := os.WriteFile(timeStampFilePath, timeStampBytes, 0666); err != nil {
 		return errors.New(fmt.Sprintf("saveTimeStampToDisk %s", err.Error()))
 	}
 	return nil
@@ -138,7 +139,7 @@ func saveTimeStampToDisk(newTimestamp *time.Time, timeStampFilePath string) erro
 // readTimeStampFromDisk read the timestamp from the disk
 func readTimeStampFromDisk(timeStampFilePath string) (*ReadSessionInput, error) {
 	var latestTimestamp ReadSessionInput
-	timeStampByte, err := ioutil.ReadFile(timeStampFilePath)
+	timeStampByte, err := os.ReadFile(timeStampFilePath)
 	if err != nil {
 		return nil, errors.New(fmt.Sprintf("saveTimeStampToDisk %s", err.Error()))
 	}
@@ -161,13 +162,13 @@ func GetLatestSessionTimeStamp(timeStampFilePAth string) (*ReadSessionInput, err
 		if err != nil {
 			return nil, errors.New(fmt.Sprintf("GetLatestSessionTimeStamp %s", err.Error()))
 		}
-		if err := ioutil.WriteFile(timeStampFilePAth, timeStampBytes, 0666); err != nil {
+		if err := os.WriteFile(timeStampFilePAth, timeStampBytes, 0666); err != nil {
 			return nil, errors.New(fmt.Sprintf("GetLatestSessionTimeStamp %s", err.Error()))
 		}
 		return latestTimestamp, nil
 	}
 	var latestTimestamp ReadSessionInput
-	timeStampByte, err := ioutil.ReadFile(timeStampFilePAth)
+	timeStampByte, err := os.ReadFile(timeStampFilePAth)
 	if err != nil {
 		return nil, errors.New(fmt.Sprintf("GetLatestSessionTimeStamp %s", err.Error()))
 	}
