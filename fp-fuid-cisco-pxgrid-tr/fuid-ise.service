@@ -1,10 +1,29 @@
 [Unit]
-Description=Watch Cisco pxgrid session events.
+Description=Forcepoint User ID Service - Cisco ISE pxGrid Integration
+Documentation=https://github.com/Forcepoint/fp-bd-fuid-cisco-pxgrid
+After=network-online.target
+Wants=network-online.target
 
 [Service]
-Restart=always
-RestartSec=10
+Type=simple
+User=fuid-ise
+Group=fuid-ise
 ExecStart=/var/fuid-ise/fuid-ise pxgrid consumer --config /var/fuid-ise/fuid-ise.yml
+Restart=on-failure
+RestartSec=10
+TimeoutStopSec=30
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=fuid-ise
+
+# Security hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/fuid-ise/logs /var/fuid-ise/timestamp
+PrivateTmp=true
 
 [Install]
 WantedBy=multi-user.target

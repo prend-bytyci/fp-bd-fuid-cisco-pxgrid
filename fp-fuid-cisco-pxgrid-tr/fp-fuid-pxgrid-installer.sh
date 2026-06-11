@@ -58,3 +58,12 @@ info "Next steps:"
 echo "  1. Edit /var/fuid-ise/fuid-ise.yml with your configuration"
 echo "  2. Start the service: systemctl start fuid-ise"
 echo "  3. Check status:      systemctl status fuid-ise"
+
+# Create dedicated system user if not exists
+if ! id "fuid-ise" &>/dev/null; then
+    info "Creating system user fuid-ise..."
+    useradd --system --no-create-home --shell /bin/false fuid-ise
+fi
+
+# Set correct ownership
+chown -R fuid-ise:fuid-ise /var/fuid-ise
