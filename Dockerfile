@@ -1,15 +1,15 @@
-FROM golang:alpine as builder
-RUN mkdir /build
-ADD . /build/
+# Build stage
+FROM golang:1.26-alpine AS builder
 WORKDIR /build
-RUN CGO_ENABLED=0 GOOS=linux go build -mod=vendor -a -installsuffix cgo -ldflags '-extldflags "-static"' -o fuid-ise .
-FROM scratch
-FROM alpine:3.12
-# install openssl
-RUN apk add --update openssl && \
-    apk add --no-cache bash && \
+COPY go.mod go.sum ./
+RUN go mod download
+COPY . .
+RUN CGO_ENABLED=0 GOOS=linux go build -a -ldflags '-extldflags "-static"' -o fuid-ise .
+
+# Runtime stage
+FROM alpine:3.21
+RUN apk add --no-cache openssl ca-certificates bash && \
     rm -rf /var/cache/apk/*
-COPY --from=builder /build/fuid-ise $GOPATH/bin
-RUN export GODEBUG=x509ignoreCN=0
 WORKDIR /app
-CMD ["bash"]
+COPY --from=builder /build/fuid-ise /usr/local/bin/fuid-ise
+ENTRYPOINT ["fuid-ise"]
