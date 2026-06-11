@@ -1,0 +1,17 @@
+# Environment files with credentials - never commit these!
+.env
+*.env
+
+# Go build artifacts
+fuid-ise
+
+# Logs
+*.log
+logs/
+
+# Timestamp files
+latest-timestamp/
+
+# OS files
+.DS_Store
+Thumbs.db
