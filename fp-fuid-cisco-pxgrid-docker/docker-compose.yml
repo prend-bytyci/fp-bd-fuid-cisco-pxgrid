@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   pxgrid-service:
     container_name: pxgrid-service
@@ -16,17 +14,26 @@ services:
       - AD_LDAP_PASSWORD=${AD_LDAP_PASSWORD}
       - AD_LDAP_HOST=${AD_LDAP_HOST}
       - AD_DOMAIN_NAME=${AD_DOMAIN_NAME}
-      - SESSION_LISTENER_INTERVAL_TIME=${SESSION_LISTENER_INTERVAL_TIME}
-      - SAVE_LOGS=${SAVE_LOGS}
-      - DISPLAY_INFO=${DISPLAY_INFO}
-      - INTERNAL_LOGS_FILE=/root/fuid-ise-logs/logs
-      - SESSION_LATEST_TIMESTAMP_PATH=/root/latest-timestamp/timestamp
-      - IGNORE_UNKNOWN_SESSIONS=${IGNORE_UNKNOWN_SESSIONS}
-      - ISE_PORT=8910
-      - FUID_PORT=5000
-      - AD_PORT=636
+      - SESSION_LISTENER_INTERVAL_TIME=${SESSION_LISTENER_INTERVAL_TIME:-3}
+      - SAVE_LOGS=${SAVE_LOGS:-false}
+      - DISPLAY_INFO=${DISPLAY_INFO:-true}
+      - INTERNAL_LOGS_FILE=/data/logs/fuid-ise.log
+      - SESSION_LATEST_TIMESTAMP_PATH=/data/timestamp/latest
+      - IGNORE_UNKNOWN_SESSIONS=${IGNORE_UNKNOWN_SESSIONS:-true}
+      - ISE_PORT=${ISE_PORT:-8910}
+      - FUID_PORT=${FUID_PORT:-5000}
+      - AD_PORT=${AD_PORT:-636}
     volumes:
-      - /root/latest-timestamp:/root/latest-timestamp
-      - /root/fuid-ise-logs:/root/fuid-ise-logs
-    restart: always
+      - pxgrid-timestamp:/data/timestamp
+      - pxgrid-logs:/data/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "pgrep", "fuid-ise"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
 
+volumes:
+  pxgrid-timestamp:
+  pxgrid-logs:
