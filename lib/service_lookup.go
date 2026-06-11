@@ -3,9 +3,10 @@ package lib
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/pkg/errors"
-	"io/ioutil"
+	"io"
 	"net/http"
+
+	"github.com/pkg/errors"
 )
 
 type ServiceLookupInput struct {
@@ -43,7 +44,7 @@ func ServiceLookupRequest(serviceName string, controller *Controller) (*ServiceL
 		if resp.StatusCode == http.StatusUnauthorized {
 			return nil, errors.New(fmt.Sprintf("UnexpectedResponseError: status_code: %d, statusReason: %s  %s", resp.StatusCode, resp.Status, "not authorized"))
 		}
-		respBody, err := ioutil.ReadAll(resp.Body)
+		respBody, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return nil, err
 		}
@@ -54,7 +55,7 @@ func ServiceLookupRequest(serviceName string, controller *Controller) (*ServiceL
 		return nil, errors.New(fmt.Sprintf("UnexpectedResponseError: status_code: %d, statusReason: %s", resp.StatusCode, resp.Status))
 	}
 	var serviceLookupOutput ServiceLookupOutput
-	respBody, err := ioutil.ReadAll(resp.Body)
+	respBody, err := io.ReadAll(resp.Body)
 	if err := json.Unmarshal(respBody, &serviceLookupOutput); err != nil {
 		return nil, err
 	}

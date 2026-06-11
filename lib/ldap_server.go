@@ -4,14 +4,15 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
+	"log"
+	"os"
+	"strings"
+	"time"
+
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"github.com/spf13/viper"
 	"gopkg.in/ldap.v2"
-	"io/ioutil"
-	"log"
-	"strings"
-	"time"
 )
 
 type KeyValue map[string]interface{}
@@ -106,7 +107,7 @@ func tlsConfigSkipVerify(CRTInsecureSkipVerify bool) *tls.Config {
 // verify TLS cert
 func tlsConfigNoSkipVerify(CRTInsecureSkipVerify bool, CRTValidFor, CRTPath string) (*tls.Config, error) {
 	tlsConfig := new(tls.Config)
-	caCert, err := ioutil.ReadFile(CRTPath)
+	caCert, err := os.ReadFile(CRTPath)
 	if err != nil {
 		return nil, err
 	}

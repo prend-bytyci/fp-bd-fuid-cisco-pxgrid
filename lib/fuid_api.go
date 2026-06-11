@@ -7,14 +7,15 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"fmt"
-	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
-	"github.com/spf13/viper"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
 	"time"
+
+	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
 )
 
 type FUIDUser struct {
@@ -84,7 +85,7 @@ func (f *FUIDController) GetUser(userNTLMIdentity string) (*FUIDUser, error) {
 		return nil, errors.Errorf("recived nil response for reading user %s from FUID with status error %d %s", userNTLMIdentity, resp.StatusCode, resp.Status)
 	}
 	defer resp.Body.Close()
-	responseBody, err := ioutil.ReadAll(resp.Body)
+	responseBody, err := io.ReadAll(resp.Body)
 	var user FUIDUser
 	if err := json.Unmarshal(responseBody, &user); err != nil {
 		return nil, err
@@ -270,7 +271,7 @@ func (f *FUIDController) PostUser(userEntity *LdapElement, sess *Sessions, displ
 	}
 	if resp.StatusCode == http.StatusBadRequest {
 		defer resp.Body.Close()
-		d, _ := ioutil.ReadAll(resp.Body)
+		d, _ := io.ReadAll(resp.Body)
 		return errors.Errorf("error in posting user to FUID. %s", string(d))
 	}
 	if resp.StatusCode == http.StatusUnauthorized {

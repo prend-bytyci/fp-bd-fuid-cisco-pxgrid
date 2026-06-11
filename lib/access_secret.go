@@ -3,9 +3,10 @@ package lib
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/pkg/errors"
-	"io/ioutil"
+	"io"
 	"net/http"
+
+	"github.com/pkg/errors"
 )
 
 type AccessSecretInput struct {
@@ -28,7 +29,7 @@ func AccessSecret(peerNodeName string, controller *Controller) (*AccessSecretOut
 		if resp.StatusCode == http.StatusUnauthorized {
 			return nil, errors.New(fmt.Sprintf("UnexpectedResponseError: status_code: %d, statusReason: %s  %s", resp.StatusCode, resp.Status, "not authorized"))
 		}
-		respBody, err := ioutil.ReadAll(resp.Body)
+		respBody, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return nil, err
 		}
@@ -39,7 +40,7 @@ func AccessSecret(peerNodeName string, controller *Controller) (*AccessSecretOut
 		return nil, errors.New(fmt.Sprintf("UnexpectedResponseError: status_code: %d, statusReason: %s", resp.StatusCode, resp.Status))
 	}
 	var accessSecretOutput AccessSecretOutput
-	respBody, err := ioutil.ReadAll(resp.Body)
+	respBody, err := io.ReadAll(resp.Body)
 	if err := json.Unmarshal(respBody, &accessSecretOutput); err != nil {
 		return nil, err
 	}

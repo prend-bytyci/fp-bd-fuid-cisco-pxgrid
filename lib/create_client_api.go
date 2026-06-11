@@ -3,9 +3,10 @@ package lib
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/pkg/errors"
-	"io/ioutil"
+	"io"
 	"net/http"
+
+	"github.com/pkg/errors"
 )
 
 type CreateClient struct {
@@ -35,7 +36,7 @@ func (c *CreateClient) Create(controller *Controller) (*ISEClient, error) {
 		if resp.StatusCode == http.StatusUnauthorized {
 			return nil, errors.New(fmt.Sprintf("UnexpectedResponseError: status_code: %d, statusReason: %s  %s", resp.StatusCode, resp.Status, "not authorized"))
 		}
-		respBody, err := ioutil.ReadAll(resp.Body)
+		respBody, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return nil, err
 		}
@@ -61,7 +62,7 @@ func (c *CreateClient) AccountActivate(controller *Controller) (*AccountActivate
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		respBody, err := ioutil.ReadAll(resp.Body)
+		respBody, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return nil, err
 		}
