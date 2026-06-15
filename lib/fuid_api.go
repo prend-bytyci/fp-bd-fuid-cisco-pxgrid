@@ -176,7 +176,7 @@ func (f *FUIDController) UserManager(sess *Sessions, displayProcess bool) error 
 			if displayProcess {
 				logrus.Infof("Read User Object from AD Domanin Controller for user %s", sess.AdUserSamAccountName)
 			}
-			err = f.PostUser(userEntity, sess, displayProcess)
+			err = f.AddLoginByGUID(userEntity.Attributes.ObjectGUID, sess, displayProcess)
 			if err != nil {
 				return err
 			}
@@ -209,7 +209,9 @@ func (f *FUIDController) PutUser(user *FUIDUser, sess *Sessions, displayProcess 
 		var newUser FUIDUser
 		newUser.ObjectGUID = user.ObjectGUID
 		newUser.ChangeType = changeType
-		newUser.Ipv4Addresses = sess.IpAddresses
+		ipv4, ipv6 := SplitIPAddresses(sess.IpAddresses)
+		newUser.Ipv4Addresses = ipv4
+		newUser.Ipv6Addresses = ipv6
 		endpoint := fmt.Sprintf("%s/%s", UserEndpoint, newUser.ObjectGUID)
 		resp, err := f.SendRequest(endpoint, "", &newUser, http.MethodPut)
 		if err != nil {
@@ -233,7 +235,9 @@ func (f *FUIDController) PutUser(user *FUIDUser, sess *Sessions, displayProcess 
 		var newUser FUIDUser
 		newUser.ObjectGUID = user.ObjectGUID
 		newUser.ChangeType = ChangeTypeDelete
-		newUser.Ipv4Addresses = sess.IpAddresses
+		ipv4, ipv6 := SplitIPAddresses(sess.IpAddresses)
+		newUser.Ipv4Addresses = ipv4
+		newUser.Ipv6Addresses = ipv6
 		endpoint := fmt.Sprintf("%s/%s", UserEndpoint, newUser.ObjectGUID)
 		resp, err := f.SendRequest(endpoint, "", &newUser, http.MethodPut)
 		if err != nil {
@@ -260,7 +264,9 @@ func (f *FUIDController) PostUser(userEntity *LdapElement, sess *Sessions, displ
 	nTm := fmt.Sprintf("%s\\%s", sess.AdUserNetBiosName, sess.AdUserSamAccountName)
 	newUser.NTLMIdentity = nTm
 	newUser.Dn = sess.AdUserResolvedDns
-	newUser.Ipv4Addresses = sess.IpAddresses
+	ipv4, ipv6 := SplitIPAddresses(sess.IpAddresses)
+	newUser.Ipv4Addresses = ipv4
+	newUser.Ipv6Addresses = ipv6
 	newUser.SAMAccountName = sess.AdUserSamAccountName
 	newUser.ObjectGUID = userEntity.Attributes.ObjectGUID
 	newUser.Groups = userEntity.Attributes.MemberOf
@@ -278,7 +284,9 @@ func (f *FUIDController) PostUser(userEntity *LdapElement, sess *Sessions, displ
 		return errors.New("Not Authorized to do Post request to FUID API")
 	}
 	if resp.StatusCode != http.StatusOK {
-		return errors.Errorf("add user to FUID statusCode %d %s", resp.StatusCode, resp.Status)
+		defer resp.Body.Close()
+		d, _ := io.ReadAll(resp.Body)
+		return errors.Errorf("add user to FUID statusCode %d %s, body: %s", resp.StatusCode, resp.Status, string(d))
 	}
 	if displayProcess {
 		logrus.Infof("use %s has been written to FUILD Database", sess.AdUserSamAccountName)
@@ -299,4 +307,47 @@ func generateUrl(endpoint, parameters string) (string, error) {
 		generatedUrl = fmt.Sprintf("%s?%s", generatedUrl, parameters)
 	}
 	return generatedUrl, nil
+}
+
+// AddLoginByGUID adds IP addresses to an existing FUID user identified by objectGUID.
+// This works regardless of NetBIOS name mismatches between ISE and FUID, because
+// the objectGUID is stable and unique. Used for AUTHENTICATED session events.
+func (f *FUIDController) AddLoginByGUID(objectGUID string, sess *Sessions, displayProcess bool) error {
+	ipv4, ipv6 := SplitIPAddresses(sess.IpAddresses)
+
+	var changeType string
+	switch sess.State {
+	case AUTHENTICATED:
+		changeType = ChangeTypeAdd
+	case DISCONNECTED:
+		changeType = ChangeTypeDelete
+	default:
+		return nil
+	}
+
+	newUser := FUIDUser{
+		ObjectGUID:    objectGUID,
+		ChangeType:    changeType,
+		Ipv4Addresses: ipv4,
+		Ipv6Addresses: ipv6,
+	}
+
+	endpoint := fmt.Sprintf("%s/%s", UserEndpoint, objectGUID)
+	resp, err := f.SendRequest(endpoint, "", &newUser, http.MethodPut)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusUnauthorized {
+		return errors.New("Not Authorized to do PUT request to FUID API")
+	}
+	if resp.StatusCode != http.StatusOK {
+		d, _ := io.ReadAll(resp.Body)
+		return errors.Errorf("AddLoginByGUID failed, statusCode %d %s, body: %s", resp.StatusCode, resp.Status, string(d))
+	}
+	if displayProcess {
+		logrus.Infof("%s login (%v) for user GUID %s", changeType, ipv4, objectGUID)
+	}
+	return nil
 }
