@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net"
 	"github.com/pkg/errors"
 	"os"
 	"os/exec"
@@ -66,4 +67,24 @@ func FixJson(data []byte, st interface{}) error {
 			return errors.New("cannot umarshall sessions")
 		}
 	}
+}
+
+// SplitIPAddresses separates a mixed list of IP strings into valid IPv4 and IPv6 slices.
+// Empty strings and invalid entries are discarded.
+func SplitIPAddresses(addresses []string) (ipv4 []string, ipv6 []string) {
+	for _, addr := range addresses {
+		if addr == "" {
+			continue
+		}
+		parsed := net.ParseIP(addr)
+		if parsed == nil {
+			continue
+		}
+		if parsed.To4() != nil {
+			ipv4 = append(ipv4, addr)
+		} else {
+			ipv6 = append(ipv6, addr)
+		}
+	}
+	return ipv4, ipv6
 }
