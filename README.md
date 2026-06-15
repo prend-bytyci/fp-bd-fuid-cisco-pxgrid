@@ -90,8 +90,12 @@ This service picks it up and adds or removes the user's IP address in FUID autom
 
 Check service is running:
 
-    systemctl status fuid-ise
-    journalctl -u fuid-ise -f
+    sudo systemctl start fuid-ise     # starten
+    sudo systemctl stop fuid-ise      # stoppen
+    sudo systemctl restart fuid-ise   # neustarten (z.B. nach Config-Änderung)
+    sudo systemctl status fuid-ise    # Status prüfen
+    journalctl -u fuid-ise -f         # Live-Logs
+    journalctl -u fuid-ise --since "10 min ago"   # Logs der letzten 10 Min
 
 Check network connectivity:
 
