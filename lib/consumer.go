@@ -106,7 +106,8 @@ func ProcessSessions(sessions *IseSessions, timeStampFilePath string, fuidContro
 					continue
 				}
 				if err := fuidController.UserManager(&sess, displayProcess); err != nil {
-					return err
+					logrus.Warnf("could not process session for user %s, skipping: %s", sess.Username, err)
+					continue
 				}
 			}
 		}

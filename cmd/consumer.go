@@ -70,8 +70,7 @@ var consumerRestCmd = &cobra.Command{
 		lib.SetupCloseHandler()
 		for {
 			if err := lib.SessionListener(accessSecretOutput.Secret, restBaseUrl, viper.GetString("SESSION_LATEST_TIMESTAMP_PATH"), controller, fuidController, DisplayProcess); err != nil {
-				logrus.Error(err)
-				logrus.Exit(1)
+				logrus.Warnf("error processing sessions, continuing: %s", err)
 			}
 			time.Sleep(time.Duration(viper.GetInt("SESSION_LISTENER_INTERVAL_TIME")) * time.Second)
 		}
