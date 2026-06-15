@@ -22,7 +22,7 @@ SyslogIdentifier=fuid-ise
 NoNewPrivileges=true
 ProtectSystem=strict
 ProtectHome=true
-ReadWritePaths=/var/fuid-ise/logs /var/fuid-ise/timestamp
+ReadWritePaths=/var/fuid-ise/fuid-ise-logs /var/fuid-ise/latest-timestamp
 PrivateTmp=true
 
 [Install]

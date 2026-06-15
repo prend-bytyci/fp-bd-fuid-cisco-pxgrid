@@ -33,8 +33,8 @@ done
 
 # Create directories
 info "Creating directories..."
-mkdir -p /var/fuid-ise/logs
-mkdir -p /var/fuid-ise/timestamp
+mkdir -p /var/fuid-ise/fuid-ise-logs
+mkdir -p /var/fuid-ise/latest-timestamp
 
 # Install binary and config
 info "Installing fuid-ise binary..."
